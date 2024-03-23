@@ -1,0 +1,2 @@
+LOGIN = 'abh'
+PASSWORD = 'H64nRT_4$'
