@@ -79,21 +79,35 @@ def search(creditor, start):
         scroll_quantity=math.ceil(zalog_quantity/30)
         quantity_button.click()
         time.sleep(3)
+        iteration=0
+        use_start=True
+        count=0
         for scroll in range(scroll_quantity):
-            elem = driver.find_element(By.TAG_NAME, "html")
-            elem.send_keys(Keys.END)
+            if iteration+30<start:
+                elem = driver.find_element(By.TAG_NAME, "html")
+                elem.send_keys(Keys.END)
+                time.sleep(1)
+                iteration+=30
+                continue
+            if use_start is True:
+                zalogi = driver.find_elements(By.CSS_SELECTOR, 'button.pledges-message-link')[start::]
+                use_start=False
+            else:
+                zalogi = driver.find_elements(By.CSS_SELECTOR, 'button.pledges-message-link')[iteration::]
+            for zalog in zalogi:
+                ActionChains(driver).move_to_element(zalog).click(zalog).perform()
+                time.sleep(0.2)
+                reg_number = driver.find_element(By.CLASS_NAME, 'sp-table-type-details').find_elements(By.TAG_NAME, 'tr')[
+                    4].find_elements(By.TAG_NAME, 'td')[1].text
+                reg_numbers.append(reg_number)
+                button_close = driver.find_element(By.CSS_SELECTOR, 'button.close')
+                button_close.click()
+                count+=1
+                print(f"Найден номер {reg_number}. Всего найдено номеров - {count}. Осталось собрать {zalog_quantity-count-start}")
+                with open('cad.txt', 'a', encoding='utf-8') as file:
+                    file.write(reg_number+'\n')
+            iteration+=30
             time.sleep(1)
-        zalogi=driver.find_elements(By.CSS_SELECTOR, 'button.pledges-message-link')[start::]
-        for zalog in zalogi:
-            index=zalogi.index(zalog)
-            ActionChains(driver).move_to_element(zalog).click(zalog).perform()
-            time.sleep(0.2)
-            reg_number=driver.find_element(By.CLASS_NAME, 'sp-table-type-details').find_elements(By.TAG_NAME, 'tr')[4].find_elements(By.TAG_NAME, 'td')[1].text
-            reg_numbers.append(reg_number)
-            button_close=driver.find_element(By.CSS_SELECTOR, 'button.close')
-            button_close.click()
-            if index==len(zalogi)-1:
-                break
         return reg_numbers
     except:
         return 'Ничего не найдено'
@@ -107,12 +121,7 @@ if __name__ == '__main__':
         login()
         for creditor in spark_creditors.creditors:
             start=spark_creditors.creditors[creditor]
-            result=search(creditor, start)
-            if isinstance(result, list):
-                write_to_file(result)
-            else:
-                continue
-
+            search(creditor, start)
 
         logout()
         time.sleep(5)
